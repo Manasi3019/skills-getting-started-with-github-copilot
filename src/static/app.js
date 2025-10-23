@@ -13,18 +13,62 @@ document.addEventListener("DOMContentLoaded", () => {
       // Clear loading message
       activitiesList.innerHTML = "";
 
+      // Reset activity select (keep the placeholder option)
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
+
+      // Helper to make a pretty display name from an email or string
+      function formatName(identifier) {
+        if (!identifier) return "";
+        const namePart = identifier.includes("@") ? identifier.split("@")[0] : identifier;
+        return namePart
+          .replace(/[._-]+/g, " ")
+          .replace(/\b\w/g, (ch) => ch.toUpperCase());
+      }
+
+      // Helper to get initial letter
+      function initialFor(name) {
+        return name ? name.trim().charAt(0).toUpperCase() : "?";
+      }
+
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
         const activityCard = document.createElement("div");
         activityCard.className = "activity-card";
 
-        const spotsLeft = details.max_participants - details.participants.length;
+        const participants = Array.isArray(details.participants) ? details.participants : [];
+        const spotsLeft = details.max_participants - participants.length;
+
+        // Build participants HTML
+        let participantsHTML = "";
+        if (participants.length === 0) {
+          participantsHTML = `<p class="no-participants">No participants yet.</p>`;
+        } else {
+                const items = participants
+            .map((p) => {
+              const display = formatName(p);
+              const initial = initialFor(display);
+              return `
+                <li class="participant-item">
+                  <span class="participant-initial">${initial}</span>
+                  <span class="participant-name">${display}</span>
+                  <button class="delete-participant" data-email="${p}" data-activity="${name}">×</button>
+                </li>
+              `;
+            })
+            .join("");
+          participantsHTML = `<ul class="participants-list">${items}</ul>`;
+        }
 
         activityCard.innerHTML = `
           <h4>${name}</h4>
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+
+          <div class="participants">
+            <h5>Participants</h5>
+            ${participantsHTML}
+          </div>
         `;
 
         activitiesList.appendChild(activityCard);
@@ -78,6 +122,46 @@ document.addEventListener("DOMContentLoaded", () => {
       messageDiv.className = "error";
       messageDiv.classList.remove("hidden");
       console.error("Error signing up:", error);
+    }
+  });
+
+  // Handle participant deletion
+  activitiesList.addEventListener("click", async (event) => {
+    if (event.target.classList.contains("delete-participant")) {
+      const email = event.target.dataset.email;
+      const activity = event.target.dataset.activity;
+      
+      try {
+        const response = await fetch(
+          `/activities/${encodeURIComponent(activity)}/unregister?email=${encodeURIComponent(email)}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        const result = await response.json();
+
+        if (response.ok) {
+          messageDiv.textContent = result.message;
+          messageDiv.className = "success";
+          fetchActivities(); // Refresh the activities list
+        } else {
+          messageDiv.textContent = result.detail || "An error occurred";
+          messageDiv.className = "error";
+        }
+
+        messageDiv.classList.remove("hidden");
+
+        // Hide message after 5 seconds
+        setTimeout(() => {
+          messageDiv.classList.add("hidden");
+        }, 5000);
+      } catch (error) {
+        messageDiv.textContent = "Failed to unregister. Please try again.";
+        messageDiv.className = "error";
+        messageDiv.classList.remove("hidden");
+        console.error("Error unregistering:", error);
+      }
     }
   });
 
