@@ -87,20 +87,42 @@ section h3 {
   color: #1a237e;
 }
 
-/* Bulleted list with nicer spacing */
+/* List with no bullets */
 .participants-list {
-  list-style: disc;
+  list-style: none;
   margin: 0;
-  padding-left: 20px;
+  padding-left: 0;
 }
 
-/* Each participant row aligns an initial badge with the name */
+/* Each participant row aligns an initial badge with the name and delete button */
 .participant-item {
   display: flex;
   align-items: center;
   margin-bottom: 6px;
   font-size: 14px;
   color: #333;
+}
+
+/* Delete button styling */
+.delete-participant {
+  margin-left: auto;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+
+.delete-participant:hover {
+  background-color: #cc0000;
 }
 
 /* Circular initial badge */
